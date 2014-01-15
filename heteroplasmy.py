@@ -17,17 +17,21 @@ import numpy as np
 # Base cell class
 class cell(object):
     nextID = 0
-    def __init__(self, probTypeA, initialMitoNumber):
+    def __init__(self, probTypeA, mitosToAdd, numTypeA, numTypeB):
         # Initialise unique cell ID
         self.ID = cell.nextID
         cell.nextID += 1
         # Store probability of type A
         self.probTypeA = probTypeA
+        # Store initialised variables (in case we need some sort of history)
+        self.mitosToAdd = mitosToAdd
+        self.numTypeA = numTypeA
+        self.numTypeB = numTypeB
         # Initialise type A & B populations
-        self.numTypeA = 0
-        self.numTypeB = 0
-        # Grow type A & B mitochondria up to initialMitoNumber
-        while (self.numTypeA + self.numTypeB) < initialMitoNumber:
+        self.numTypeA = numTypeA
+        self.numTypeB = numTypeB
+        # Grow type A & B mitochondria up to mitosToAdd
+        while (self.numTypeA + self.numTypeB) < mitosToAdd:
             self.addMito()
 
     # Mitochondrial replication code
@@ -43,7 +47,17 @@ class cell(object):
 
     # Cell division code
     def cellDivision(self):
-        print 'not implemented yet!'
+        if self.numTypeA > 0:
+            numToLoseA = np.random.binomial(self.numTypeA, 0.5)
+        else:
+            numToLoseA = 0
+
+        if self.numTypeB > 0:
+            numToLoseB = np.random.binomial(self.numTypeB, 0.5)
+        else:
+            numToLoseB = 0
+            
+        cellList.append(cell(self.probTypeA, 0, numToLoseA, numToLoseB)) # Add a new cell to the collection. This could probably be done better
 
     # Interfaces
     def getNumTypeA(self):
@@ -58,7 +72,7 @@ class cell(object):
 def test():
     cellList = []
     for i in range(0, 10):
-        cellList.append(cell(0.5, 5))
+        cellList.append(cell(0.5, 5, 0, 0))
 
     print 'testing initialisation:'
 
@@ -73,12 +87,16 @@ def test():
     for x in cellList:
         print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
 
+    print 'testing cell division'
+    for x in range(0, len(cellList)):
+        cellList[x].cellDivision()
 
+    for x in cellList:
+        print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
 
+test()
 
-
-
-
+cellList[1].cellDivision()
 
 
 
