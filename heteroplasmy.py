@@ -56,8 +56,8 @@ class cell(object):
             numToLoseB = np.random.binomial(self.numTypeB, 0.5)
         else:
             numToLoseB = 0
-            
-        cellList.append(cell(self.probTypeA, 0, numToLoseA, numToLoseB)) # Add a new cell to the collection. This could probably be done better
+
+        return [numToLoseA, numToLoseB] # tell the petri dish what the new cell has
 
     # Interfaces
     def getNumTypeA(self):
@@ -69,34 +69,48 @@ class cell(object):
     def getID(self):
         return self.ID
 
+class petriDish(object):
+    def __init__(self, numCells, probTypeA, cellMitosToAdd):
+        # Store cells in this list
+        self.cellList = []
+
+        # Store initial variables
+        self.numCells = numCells
+        self.probTypeA = probTypeA
+        self.cellMitosToAdd = cellMitosToAdd
+
+        # Add the initial cell population
+        for i in range(0, numCells):
+            self.cellList.append(cell(self.probTypeA, self.cellMitosToAdd, 0, 0))
+
+    def newCell(self, probTypeA, mitosToAdd, numTypeA, numTypeB):
+        cellList.append(cell(probTypeA, mitosToAdd, numTypeA, numTypeB))
+
+    def makeCellDivide(self, chosenID):
+        newCellInfo = cellList[0].cellDivision()
+        print newCellInfo
+
+    # Interfaces
+    def getNumCells(self):
+        return len(self.cellList)
+
+    def printCellList(self): # really just for testing
+        print 'ID, typeA, typeB, total'
+        for x in self.cellList:
+            print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
+
+
+
+    
 def test():
-    cellList = []
-    for i in range(0, 10):
-        cellList.append(cell(0.5, 5, 0, 0))
-
-    print 'testing initialisation:'
-
-    for x in cellList:
-        print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
-
-    print 'testing adding mitochondria, 1 per cell'
-    for x in cellList:
-        x.addMito()
-
-    print 'ID, typeA, typeB, total'
-    for x in cellList:
-        print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
-
-    print 'testing cell division'
-    for x in range(0, len(cellList)):
-        cellList[x].cellDivision()
-
-    for x in cellList:
-        print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
-
+    petri = petriDish(10, 0.5, 10)
+    print petri.getNumCells()
+    petri.printCellList()
+    print 'testing division'
+    petri.makeCellDivide(0)
+    petri.printCellList()
+    
 test()
-
-cellList[1].cellDivision()
 
 
 
