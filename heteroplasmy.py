@@ -13,11 +13,12 @@
 
 # Libraries
 import numpy as np
+import matplotlib as mpl
 
 # Base cell class
 class cell(object):
     nextID = 0
-    def __init__(self, probTypeA, mitosToAdd, numTypeA, numTypeB):
+    def __init__(self, probTypeA, mitosToAdd, numTypeA, numTypeB, targetMitos):
         # Initialise unique cell ID
         self.ID = cell.nextID
         cell.nextID += 1
@@ -27,6 +28,7 @@ class cell(object):
         self.mitosToAdd = mitosToAdd
         self.numTypeA = numTypeA
         self.numTypeB = numTypeB
+        self.targetMitos = targetMitos
         # Initialise type A & B populations
         self.numTypeA = numTypeA
         self.numTypeB = numTypeB
@@ -47,6 +49,9 @@ class cell(object):
 
     # Cell division code
     def cellDivision(self):
+        initialTypeA = self.numTypeA
+        initialTypeB = self.numTypeB
+       
         if self.numTypeA > 0:
             numToLoseA = np.random.binomial(self.numTypeA, 0.5)
         else:
@@ -56,9 +61,22 @@ class cell(object):
             numToLoseB = np.random.binomial(self.numTypeB, 0.5)
         else:
             numToLoseB = 0
+        
+        # take mitochondria out
+        self.numTypeA -= numToLoseA
+        self.numTypeB -= numToLoseB
+        
+        assert initialTypeA + initialTypeB == self.numTypeA + self.numTypeB + numToLoseA + numToLoseB
 
         return [numToLoseA, numToLoseB] # tell the petri dish what the new cell has
-
+        
+    def chooseAction(self):
+        if self.numTypeA < self.targetMitos:
+            return 'addMito'
+            
+        if self.numTypeA >= self.targetMitos:
+            return 'divide'
+        
     # Interfaces
     def getNumTypeA(self):
         return self.numTypeA
@@ -68,9 +86,13 @@ class cell(object):
     
     def getID(self):
         return self.ID
+        
+    def getCellHeteroplasmy(self):
+        heteroplasmy = self.numTypeA/(self.numTypeA + self.numTypeB)
+        return heteroplasmy
 
 class petriDish(object):
-    def __init__(self, numCells, probTypeA, cellMitosToAdd):
+    def __init__(self, numCells, probTypeA, cellMitosToAdd, targetMitos):
         # Store cells in this list
         self.cellList = []
 
@@ -78,17 +100,42 @@ class petriDish(object):
         self.numCells = numCells
         self.probTypeA = probTypeA
         self.cellMitosToAdd = cellMitosToAdd
+        self.targetMitos = targetMitos
 
         # Add the initial cell population
         for i in range(0, numCells):
-            self.cellList.append(cell(self.probTypeA, self.cellMitosToAdd, 0, 0))
+            self.cellList.append(cell(self.probTypeA, self.cellMitosToAdd, 0, 0, self.targetMitos))
 
-    def newCell(self, probTypeA, mitosToAdd, numTypeA, numTypeB):
-        cellList.append(cell(probTypeA, mitosToAdd, numTypeA, numTypeB))
+    def newCell(self, probTypeA, mitosToAdd, numTypeA, numTypeB, targetMitos):
+        self.cellList.append(cell(probTypeA, mitosToAdd, numTypeA, numTypeB, targetMitos))
 
-    def makeCellDivide(self, chosenID):
-        newCellInfo = cellList[0].cellDivision()
-        print newCellInfo
+    def makeCellDivide(self, chosenCell):
+        newCellInfo = chosenCell.cellDivision()
+        self.newCell(self.probTypeA, 0, newCellInfo[0], newCellInfo[1], self.targetMitos)
+        
+    def makeCellAddMito(self, chosenCell):
+        chosenCell.addMito()
+        
+    def chooseCell(self):
+        return(np.random.choice(self.cellList))
+        
+    # Experiment loop:
+    def loop(self, time):
+        heteroplasmyTimeSeries = []        
+        for t in range(0, time):
+            chosen = self.chooseCell()
+            if chosen.chooseAction() == 'addMito':
+                chosen.addMito()
+                
+            elif chosen.chooseAction() == 'divide':
+                self.makeCellDivide(chosen)
+                
+            else:
+                print 'undetermined action'
+                
+            heteroplasmyTimeSeries.append(self.getHeteroplasmy())
+            
+        return heteroplasmyTimeSeries
 
     # Interfaces
     def getNumCells(self):
@@ -98,19 +145,41 @@ class petriDish(object):
         print 'ID, typeA, typeB, total'
         for x in self.cellList:
             print x.getID(), x.getNumTypeA(), x.getNumTypeB(), x.getNumTypeA() + x.getNumTypeB()
+            
+    def getHeteroplasmy(self):
+        totalA = 0.0
+        totalB = 0.0
+        
+        for x in self.cellList:
+            totalA += x.getNumTypeA()
+            totalB += x.getNumTypeB()
+            
+        heteroplasmy = totalA/(totalA + totalB)
+        
+        return heteroplasmy
 
-
-
+def doExperiment(numRuns, runTime, numCells, probA, mitosToAdd, targetMitos):
+    for run in range(0, numRuns):
+        petri = petriDish(numCells, probA, mitosToAdd, targetMitos)    
+        result = petri.loop(runTime)
+        mpl.pyplot.plot(result)
     
 def test():
-    petri = petriDish(10, 0.5, 10)
+    petri = petriDish(10, 0.5, 10, 10)
     print petri.getNumCells()
     petri.printCellList()
     print 'testing division'
-    petri.makeCellDivide(0)
+    chosen = petri.chooseCell()
+    petri.makeCellDivide(chosen)
     petri.printCellList()
+    print petri.getHeteroplasmy()
+    result = petri.loop(1000)
+    for x in result:
+        print x
+        
+    mpl.pyplot.plot(result)
     
-test()
+doExperiment(100, 1000, 10, 0.7, 10, 10)
 
 
 
