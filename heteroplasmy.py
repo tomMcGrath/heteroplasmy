@@ -13,7 +13,7 @@
 
 # Libraries
 import numpy as np
-import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 # Base cell class
 class cell(object):
@@ -192,9 +192,19 @@ def doBasicExperiment(numRuns, runTime, numCells, probA, mitosToAdd, initialA, i
 def heteroplasmyGraph(resultHolder):
     meanSeries = np.mean(resultHolder, axis = 0)
     stdSeries = np.std(resultHolder, axis = 0)
-    mpl.pyplot.plot(meanSeries)
-    mpl.pyplot.plot(meanSeries + stdSeries)
-    mpl.pyplot.plot(meanSeries - stdSeries)
+    timeSeries = range(0, len(meanSeries))
+    
+    fig, ax = plt.subplots(1)
+    ax.plot(meanSeries, lw=2, color = "blue")
+    ax.fill_between(timeSeries, meanSeries + stdSeries, meanSeries - stdSeries, facecolor = "blue", alpha = 0.3)
+    ax.set_title("Heteroplasmy dynamics")
+    ax.set_xlabel("Time interval")
+    ax.set_ylabel("Heteroplasmy")   
+    
+    
+    #plt.plot(meanSeries)
+    #plt.plot(meanSeries + stdSeries)
+    #plt.plot(meanSeries - stdSeries)
     
 
     
@@ -211,7 +221,7 @@ def test():
     for x in result:
         print x
         
-    mpl.pyplot.plot(result)
+    plt.plot(result)
     
 results = doBasicExperiment(100, 1000, 10, 0.7, 0, 1, 9, 10)
 heteroplasmyGraph(results)
