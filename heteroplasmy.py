@@ -143,7 +143,7 @@ class petriDish(object):
         
     # Experiment loop:
     def loop(self, time):
-        heteroplasmyTimeSeries = []        
+        heteroplasmyTimeSeries = np.zeros(time)  
         for t in range(0, time):
             chosen = self.chooseCell()
             if chosen.chooseAction() == 'addMito':
@@ -154,8 +154,8 @@ class petriDish(object):
                 
             else:
                 print 'undetermined action'
-                
-            heteroplasmyTimeSeries.append(self.getHeteroplasmy())
+            heteroplasmy = self.getHeteroplasmy()
+            heteroplasmyTimeSeries[t] = heteroplasmy
             
         return heteroplasmyTimeSeries
 
@@ -181,10 +181,22 @@ class petriDish(object):
         return heteroplasmy
 
 def doBasicExperiment(numRuns, runTime, numCells, probA, mitosToAdd, initialA, initialB, targetMitos):
+    resultHolder = []    
     for run in range(0, numRuns):
         petri = petriDish(numCells, probA, mitosToAdd, initialA, initialB, targetMitos)    
         result = petri.loop(runTime)
-        mpl.pyplot.plot(result)
+        #mpl.pyplot.plot(result)
+        resultHolder.append(result)
+    return resultHolder
+
+def heteroplasmyGraph(resultHolder):
+    meanSeries = np.mean(resultHolder, axis = 0)
+    stdSeries = np.std(resultHolder, axis = 0)
+    mpl.pyplot.plot(meanSeries)
+    mpl.pyplot.plot(meanSeries + stdSeries)
+    mpl.pyplot.plot(meanSeries - stdSeries)
+    
+
     
 def test():
     petri = petriDish(10, 0.5, 0, 9, 1, 10)
@@ -201,7 +213,8 @@ def test():
         
     mpl.pyplot.plot(result)
     
-doBasicExperiment(100, 1000, 10, 0.7, 0, 9, 1, 10)
+results = doBasicExperiment(100, 1000, 10, 0.7, 0, 1, 9, 10)
+heteroplasmyGraph(results)
 
 
 
