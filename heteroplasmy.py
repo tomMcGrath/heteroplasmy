@@ -38,11 +38,20 @@ class cell(object):
 
     # Mitochondrial replication code
     def addMito(self):
-        randomNumber = np.random.random_sample()        
-        if randomNumber <= self.probTypeA:
+        randomNumber = np.random.random_sample()
+        heteroplasmy = self.getCellHeteroplasmy()
+        
+        assert heteroplasmy >= 0 # check I've written heteroplasmy right!
+        assert heteroplasmy <= 1
+
+        if randomNumber < heteroplasmy:
             self.numTypeA += 1
-        elif randomNumber > self.probTypeA:
+        elif randomNumber >= heteroplasmy:
             self.numTypeB += 1
+#        if randomNumber <= self.probTypeA:
+#            self.numTypeA += 1
+#        elif randomNumber > self.probTypeA:
+#            self.numTypeB += 1
         else:
             print "Unexpected random value"
             raise ValueError
@@ -88,11 +97,22 @@ class cell(object):
         return self.ID
         
     def getCellHeteroplasmy(self):
-        heteroplasmy = self.numTypeA/(self.numTypeA + self.numTypeB)
-        return heteroplasmy
+        heteroplasmy = 0.0        
+        typeA = float(self.numTypeA)
+        typeB = float(self.numTypeB)
+        
+        if typeA == 0:
+            return 0
+        
+        elif typeB == 0:
+            return 1
+            
+        else:
+            heteroplasmy = typeA/(typeA + typeB)
+            return heteroplasmy
 
 class petriDish(object):
-    def __init__(self, numCells, probTypeA, cellMitosToAdd, targetMitos):
+    def __init__(self, numCells, probTypeA, cellMitosToAdd, initialA, initialB, targetMitos):
         # Store cells in this list
         self.cellList = []
 
@@ -101,10 +121,12 @@ class petriDish(object):
         self.probTypeA = probTypeA
         self.cellMitosToAdd = cellMitosToAdd
         self.targetMitos = targetMitos
+        self.initialA = initialA
+        self.initialB = initialB
 
         # Add the initial cell population
         for i in range(0, numCells):
-            self.cellList.append(cell(self.probTypeA, self.cellMitosToAdd, 0, 0, self.targetMitos))
+            self.newCell(self.probTypeA, self.cellMitosToAdd, self.initialA, self.initialB, self.targetMitos)
 
     def newCell(self, probTypeA, mitosToAdd, numTypeA, numTypeB, targetMitos):
         self.cellList.append(cell(probTypeA, mitosToAdd, numTypeA, numTypeB, targetMitos))
@@ -158,14 +180,14 @@ class petriDish(object):
         
         return heteroplasmy
 
-def doExperiment(numRuns, runTime, numCells, probA, mitosToAdd, targetMitos):
+def doBasicExperiment(numRuns, runTime, numCells, probA, mitosToAdd, initialA, initialB, targetMitos):
     for run in range(0, numRuns):
-        petri = petriDish(numCells, probA, mitosToAdd, targetMitos)    
+        petri = petriDish(numCells, probA, mitosToAdd, initialA, initialB, targetMitos)    
         result = petri.loop(runTime)
         mpl.pyplot.plot(result)
     
 def test():
-    petri = petriDish(10, 0.5, 10, 10)
+    petri = petriDish(10, 0.5, 0, 9, 1, 10)
     print petri.getNumCells()
     petri.printCellList()
     print 'testing division'
@@ -173,13 +195,13 @@ def test():
     petri.makeCellDivide(chosen)
     petri.printCellList()
     print petri.getHeteroplasmy()
-    result = petri.loop(1000)
+    result = petri.loop(10)
     for x in result:
         print x
         
     mpl.pyplot.plot(result)
     
-doExperiment(100, 1000, 10, 0.7, 10, 10)
+doBasicExperiment(100, 1000, 10, 0.7, 0, 9, 1, 10)
 
 
 
