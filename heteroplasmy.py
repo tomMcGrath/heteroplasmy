@@ -187,6 +187,28 @@ def doBasicExperiment(numRuns, runTime, numCells, probA, mitosToAdd, initialA, i
         result = petri.loop(runTime)
         #mpl.pyplot.plot(result)
         resultHolder.append(result)
+        if run % 10:
+            print "completed run ", run
+    return resultHolder
+    
+def doUniformICExperiment(numRuns, runTime, targetMitos):
+    # ONLY WORKS FOR N=10!
+    resultHolder = []
+    for run in range(0, numRuns):
+        petri = petriDish(0, 0, 0, 0, 0, targetMitos)
+        petri.newCell(0, 0, 1, 9, 10)
+        #petri.newCell(0, 0, 2, 8, 10)
+        #petri.newCell(0, 0, 3, 7, 10)
+        #petri.newCell(0, 0, 4, 6, 10)
+        #petri.newCell(0, 0, 5, 5, 10)
+        #petri.newCell(0, 0, 6, 4, 10)
+        #petri.newCell(0, 0, 7, 3, 10)
+        #petri.newCell(0, 0, 8, 2, 10)
+        for i in range(0,9):
+            petri.newCell(0, 0, 9, 1, 10)
+        result = petri.loop(runTime)
+        print "completed run ", run
+        resultHolder.append(result)
     return resultHolder
 
 def heteroplasmyGraph(resultHolder):
@@ -199,7 +221,10 @@ def heteroplasmyGraph(resultHolder):
     ax.fill_between(timeSeries, meanSeries + stdSeries, meanSeries - stdSeries, facecolor = "blue", alpha = 0.3)
     ax.set_title("Heteroplasmy dynamics")
     ax.set_xlabel("Time interval")
-    ax.set_ylabel("Heteroplasmy")   
+    ax.set_ylabel("Heteroplasmy")
+    
+    for result in resultHolder:
+        ax.plot(result, lw=1, color = "grey", alpha = 0.5)
     
     
     #plt.plot(meanSeries)
@@ -223,7 +248,8 @@ def test():
         
     plt.plot(result)
     
-results = doBasicExperiment(100, 1000, 10, 0.7, 0, 1, 9, 10)
+results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
+#results = doUniformICExperiment(10, 5000, 10)
 heteroplasmyGraph(results)
 
 
