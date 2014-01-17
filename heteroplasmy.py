@@ -22,6 +22,8 @@ class cell(object):
         # Initialise unique cell ID
         self.ID = cell.nextID
         cell.nextID += 1
+        # Give cell an age (initialise at zero, of course)
+        self.cellAge = 0
         # Store probability of type A
         self.probTypeA = probTypeA
         # Store initialised variables (in case we need some sort of history)
@@ -44,9 +46,9 @@ class cell(object):
         assert heteroplasmy >= 0 # check I've written heteroplasmy right!
         assert heteroplasmy <= 1
 
-        if randomNumber < heteroplasmy:
+        if randomNumber <= heteroplasmy:
             self.numTypeA += 1
-        elif randomNumber >= heteroplasmy:
+        elif randomNumber > heteroplasmy:
             self.numTypeB += 1
 #        if randomNumber <= self.probTypeA:
 #            self.numTypeA += 1
@@ -55,6 +57,11 @@ class cell(object):
         else:
             print "Unexpected random value"
             raise ValueError
+            
+        self.age()
+            
+    def age(self):
+        self.cellAge += 1
 
     # Cell division code
     def cellDivision(self):
@@ -70,6 +77,16 @@ class cell(object):
             numToLoseB = np.random.binomial(self.numTypeB, 0.5)
         else:
             numToLoseB = 0
+            
+        if numToLoseA + numToLoseB == self.numTypeA + self.numTypeB: # make sure a mitochondrion is retained
+            if self.numTypeA > 0: # prefer keeping a good mito
+                numToLoseA -= 1
+            
+            elif self.numTypeB > 0: # but keep a bad one if necessary
+                numToLoseB -= 1
+            
+            else:
+                print "error in replication code"
         
         # take mitochondria out
         self.numTypeA -= numToLoseA
@@ -83,7 +100,10 @@ class cell(object):
         if self.numTypeA < self.targetMitos:
             return 'addMito'
             
-        if self.numTypeA >= self.targetMitos:
+        if self.numTypeA >= self.targetMitos and self.age < 30: # hard-code age here
+            return 'age'
+            
+        if self.numTypeA >= self.targetMitos and self.age >= 30: # CHANGE THIS TOO
             return 'divide'
         
     # Interfaces
@@ -144,21 +164,41 @@ class petriDish(object):
     # Experiment loop:
     def loop(self, time):
         heteroplasmyTimeSeries = np.zeros(time)
-        cellDataTimeSeries = np.zeros(time)
+        #cellDataTimeSeries = np.zeros(time)
         for t in range(0, time):
             chosen = self.chooseCell()
             if chosen.chooseAction() == 'addMito':
                 chosen.addMito()
                 
+            elif chosen.chooseAction() == 'age':
+                chosen.age()
+                
             elif chosen.chooseAction() == 'divide':
                 self.makeCellDivide(chosen)
                 
             else:
-                print 'undetermined action'
-            cell0Heteroplasmy = self.cellList[0].getCellHeteroplasmy()
-            cellDataTimeSeries[t] = cell0Heteroplasmy
+                print 'undetermined action ', chosen.chooseAction()
+            #cell0Heteroplasmy = self.cellList[0].getCellHeteroplasmy()
+            #cellDataTimeSeries[t] = cell0Heteroplasmy
             heteroplasmy = self.getHeteroplasmy()
             heteroplasmyTimeSeries[t] = heteroplasmy
+            
+        return heteroplasmyTimeSeries
+        
+    def oneCellLoop(self, time):
+        cellDataTimeSeries = np.zeros(time)
+        cell = self.cellList[0]
+        for t in range(0, time):
+            if cell.chooseAction() == 'addMito':
+                cell.addMito()
+                
+            elif cell.chooseAction() == 'divide':
+                self.makeCellDivide(cell)
+                
+            else: 
+                print "Invalid action"
+            cell0Heteroplasmy = cell.getCellHeteroplasmy()
+            cellDataTimeSeries[t] = cell0Heteroplasmy
             
         return cellDataTimeSeries
 
@@ -208,8 +248,18 @@ def doICExperiment(numRuns, runTime, targetMitos):
         #petri.newCell(0, 0, 7, 3, 10)
         #petri.newCell(0, 0, 8, 2, 10)
         for i in range(0,1):
-            petri.newCell(0, 0, 5, 5, 10)
+            petri.newCell(0, 0, 6, 4, 10)
         result = petri.loop(runTime)
+        print "completed run ", run
+        resultHolder.append(result)
+    return resultHolder
+    
+def doOneCellExperiment(numRuns, runTime, targetMitos):
+    resultHolder = []
+    for run in range(0, numRuns):
+        petri = petriDish(0, 0, 0, 0, 0, targetMitos)
+        petri.newCell(0, 0, 5, 5, 10)
+        result = petri.oneCellLoop(runTime)
         print "completed run ", run
         resultHolder.append(result)
     return resultHolder
@@ -225,6 +275,7 @@ def heteroplasmyGraph(resultHolder):
     ax.set_title("Heteroplasmy dynamics")
     ax.set_xlabel("Time interval")
     ax.set_ylabel("Heteroplasmy")
+    ax.set_ylim([0,1])
     
     for result in resultHolder:
         ax.plot(result, lw=1, color = "grey", alpha = 0.5)
@@ -233,8 +284,6 @@ def heteroplasmyGraph(resultHolder):
     #plt.plot(meanSeries)
     #plt.plot(meanSeries + stdSeries)
     #plt.plot(meanSeries - stdSeries)
-    
-
     
 def test():
     petri = petriDish(10, 0.5, 0, 9, 1, 10)
@@ -252,7 +301,8 @@ def test():
     plt.plot(result)
     
 #results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
-results = doICExperiment(10, 3000, 10)
+#results = doOneCellExperiment(100, 100000, 10)
+results = doICExperiment(10, 10000, 10)
 heteroplasmyGraph(results)
 
 
