@@ -191,7 +191,7 @@ def doBasicExperiment(numRuns, runTime, numCells, probA, mitosToAdd, initialA, i
             print "completed run ", run
     return resultHolder
     
-def doUniformICExperiment(numRuns, runTime, targetMitos):
+def doICExperiment(numRuns, runTime, targetMitos):
     # ONLY WORKS FOR N=10!
     resultHolder = []
     for run in range(0, numRuns):
@@ -248,8 +248,8 @@ def test():
         
     plt.plot(result)
     
-results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
-#results = doUniformICExperiment(10, 5000, 10)
+#results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
+results = doICExperiment(10, 5000, 10)
 heteroplasmyGraph(results)
 
 
