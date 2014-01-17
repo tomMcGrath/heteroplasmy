@@ -143,7 +143,8 @@ class petriDish(object):
         
     # Experiment loop:
     def loop(self, time):
-        heteroplasmyTimeSeries = np.zeros(time)  
+        heteroplasmyTimeSeries = np.zeros(time)
+        cellDataTimeSeries = np.zeros(time)
         for t in range(0, time):
             chosen = self.chooseCell()
             if chosen.chooseAction() == 'addMito':
@@ -154,10 +155,12 @@ class petriDish(object):
                 
             else:
                 print 'undetermined action'
+            cell0Heteroplasmy = self.cellList[0].getCellHeteroplasmy()
+            cellDataTimeSeries[t] = cell0Heteroplasmy
             heteroplasmy = self.getHeteroplasmy()
             heteroplasmyTimeSeries[t] = heteroplasmy
             
-        return heteroplasmyTimeSeries
+        return cellDataTimeSeries
 
     # Interfaces
     def getNumCells(self):
@@ -196,7 +199,7 @@ def doICExperiment(numRuns, runTime, targetMitos):
     resultHolder = []
     for run in range(0, numRuns):
         petri = petriDish(0, 0, 0, 0, 0, targetMitos)
-        petri.newCell(0, 0, 1, 9, 10)
+        #petri.newCell(0, 0, 5, 5, 10)
         #petri.newCell(0, 0, 2, 8, 10)
         #petri.newCell(0, 0, 3, 7, 10)
         #petri.newCell(0, 0, 4, 6, 10)
@@ -204,8 +207,8 @@ def doICExperiment(numRuns, runTime, targetMitos):
         #petri.newCell(0, 0, 6, 4, 10)
         #petri.newCell(0, 0, 7, 3, 10)
         #petri.newCell(0, 0, 8, 2, 10)
-        for i in range(0,9):
-            petri.newCell(0, 0, 9, 1, 10)
+        for i in range(0,1):
+            petri.newCell(0, 0, 5, 5, 10)
         result = petri.loop(runTime)
         print "completed run ", run
         resultHolder.append(result)
@@ -249,7 +252,7 @@ def test():
     plt.plot(result)
     
 #results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
-results = doICExperiment(10, 5000, 10)
+results = doICExperiment(10, 3000, 10)
 heteroplasmyGraph(results)
 
 
