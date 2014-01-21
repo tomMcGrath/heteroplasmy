@@ -57,8 +57,7 @@ class cell(object):
         else:
             print "Unexpected random value"
             raise ValueError
-            
-        self.age()
+
             
     def age(self):
         self.cellAge += 1
@@ -87,23 +86,29 @@ class cell(object):
             
             else:
                 print "error in replication code"
-        
+                
         # take mitochondria out
         self.numTypeA -= numToLoseA
         self.numTypeB -= numToLoseB
+        
+        # set cell age to 0 - resetting cell cycle
+        self.cellAge = 0        
         
         assert initialTypeA + initialTypeB == self.numTypeA + self.numTypeB + numToLoseA + numToLoseB
 
         return [numToLoseA, numToLoseB] # tell the petri dish what the new cell has
         
     def chooseAction(self):
-        if self.numTypeA < self.targetMitos:
+        if self.cellAge >= 50:
+            return 'divide'
+        
+        elif self.numTypeA < self.targetMitos and self.cellAge < 50:
             return 'addMito'
             
-        if self.numTypeA >= self.targetMitos and self.age < 30: # hard-code age here
+        elif self.numTypeA >= self.targetMitos and self.cellAge < 50: # hard-code age here
             return 'age'
             
-        if self.numTypeA >= self.targetMitos and self.age >= 30: # CHANGE THIS TOO
+        elif self.cellAge >= 50: # CHANGE THIS TOO
             return 'divide'
         
     # Interfaces
@@ -169,6 +174,7 @@ class petriDish(object):
             chosen = self.chooseCell()
             if chosen.chooseAction() == 'addMito':
                 chosen.addMito()
+                chosen.age()
                 
             elif chosen.chooseAction() == 'age':
                 chosen.age()
@@ -248,7 +254,7 @@ def doICExperiment(numRuns, runTime, targetMitos):
         #petri.newCell(0, 0, 7, 3, 10)
         #petri.newCell(0, 0, 8, 2, 10)
         for i in range(0,1):
-            petri.newCell(0, 0, 6, 4, 10)
+            petri.newCell(0, 0, 5, 5, 10)
         result = petri.loop(runTime)
         print "completed run ", run
         resultHolder.append(result)
@@ -302,7 +308,7 @@ def test():
     
 #results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
 #results = doOneCellExperiment(100, 100000, 10)
-results = doICExperiment(10, 10000, 10)
+results = doICExperiment(10, 5000, 10)
 heteroplasmyGraph(results)
 
 
@@ -317,4 +323,3 @@ heteroplasmyGraph(results)
 
 
 
-	
