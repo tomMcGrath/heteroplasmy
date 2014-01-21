@@ -198,6 +198,9 @@ class petriDish(object):
             if cell.chooseAction() == 'addMito':
                 cell.addMito()
                 
+            elif cell.chooseAction() == 'age':
+                cell.age()
+                
             elif cell.chooseAction() == 'divide':
                 self.makeCellDivide(cell)
                 
@@ -254,7 +257,7 @@ def doICExperiment(numRuns, runTime, targetMitos):
         #petri.newCell(0, 0, 7, 3, 10)
         #petri.newCell(0, 0, 8, 2, 10)
         for i in range(0,1):
-            petri.newCell(0, 0, 5, 5, 10)
+            petri.newCell(0, 0, 5, 95, 10)
         result = petri.loop(runTime)
         print "completed run ", run
         resultHolder.append(result)
@@ -264,7 +267,7 @@ def doOneCellExperiment(numRuns, runTime, targetMitos):
     resultHolder = []
     for run in range(0, numRuns):
         petri = petriDish(0, 0, 0, 0, 0, targetMitos)
-        petri.newCell(0, 0, 5, 5, 10)
+        petri.newCell(0, 0, 7, 3, 10)
         result = petri.oneCellLoop(runTime)
         print "completed run ", run
         resultHolder.append(result)
@@ -284,7 +287,7 @@ def heteroplasmyGraph(resultHolder):
     ax.set_ylim([0,1])
     
     for result in resultHolder:
-        ax.plot(result, lw=1, color = "grey", alpha = 0.5)
+        ax.plot(result, lw=1, color = "grey", alpha = 0.2)
     
     
     #plt.plot(meanSeries)
@@ -308,7 +311,7 @@ def test():
     
 #results = doBasicExperiment(20, 100000, 10, 0.7, 0, 9, 1, 10)
 #results = doOneCellExperiment(100, 100000, 10)
-results = doICExperiment(10, 5000, 10)
+results = doICExperiment(20, 10000, 10)
 heteroplasmyGraph(results)
 
 
