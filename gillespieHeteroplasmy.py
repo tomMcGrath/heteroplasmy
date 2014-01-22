@@ -4,7 +4,6 @@
 # Date started: 21/01/14
 
 import numpy as np
-import scipy.misc
 import matplotlib.pyplot as plt
 import collections as coll
 
@@ -13,7 +12,6 @@ mitoGenRate = 1 # needs changing!
 divisionRate = 1
 targetNumA = 100
 cellCycleTime = 3000
-divisionHelper = {} # stores results of factorial computation ((numA, numB), (numALost, numBLost))
 
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
@@ -30,16 +28,6 @@ def getShortestClock(population):
         else:
             continue
     return shortestClock
-    
-def choose(a,b):
-    returnVar = scipy.misc.factorial(a)/(scipy.misc.factorial(b)*scipy.misc.factorial((a-b)))
-    return int(returnVar)
-    
-def totalChoices(a):
-    returnVar = 0
-    for i in range(0, a+1):
-        returnVar += choose(a,i)
-    return int(returnVar)
 
 # transition functions
 def probAPlusOne((numA, numB)):
@@ -51,15 +39,12 @@ def probBPlusOne((numA, numB)):
     heteroplasmy = float(numA)/(float(numA + numB))
     transitionProb = mitoGenRate * (1 - heteroplasmy) * population[(numA, numB)][0]   
     return transitionProb
-
-def splittingProb((numA, numB), (numALost, numBLost), divisionHelper):
-    # can this be done with dynamic programming to speed up calculations of factorials?
-    if ((numA, numB), (numALost, numBLost)) in divisionHelper.keys():
-        return divisionHelper[((numA, numB), (numALost, numBLost))]        
-    else:
-        returnVar = float(choose(numA, numALost)*choose(numB, numBLost))/float(totalChoices(numA)*totalChoices(numB))
-        divisionHelper[((numA, numB), (numALost, numBLost))] = returnVar
-        return returnVar
+    
+def chooseDivisiom((numA, numB)):
+    numALost = np.random.binomial(numA, 0.5)
+    numBLost = np.random.binomial(numB, 0.5)
+    
+    return ((numA-numALost, numB-numBLost),(numALost, numBLost))
     
 # calculate a0
 def calcA0(population):
