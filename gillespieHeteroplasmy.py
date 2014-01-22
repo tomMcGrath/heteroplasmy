@@ -62,7 +62,7 @@ def createCell((numA, numB)):
         population[(numA, numB)][1].append(cellCycleTime + np.random.uniform()) # init with some random delta to prevent collisions
     except KeyError:
         population[(numA, numB)] = [1]
-        population[(numA, numB)].append(coll.deque([cellCycleTime + np.random.uniform()]))
+        population[(numA, numB)].append(coll.deque([cellCycleTime + np.random.uniform()]))    
         
 def advanceAllClocks(tau):
     # steps all clocks in the population clock deques forward by tau
@@ -95,7 +95,27 @@ def run(runTime):
             # partition [0, 1) appropriately by a_i
             # draw from [0, 1)
             # do the appropriate action
-            print tau
+            target = np.random.uniform()
+            ai = 0
+            for x in population.keys():
+                if (ai + probAPlusOne(x) > target):
+                    print 'adding type A mitochondria to ', x
+                    createCell((x[0]+1, x[1])) # PROBLEM - needs to inherit cycle timer!
+                    population[x][0] -= 1
+                    population[x][1].popleft()
+                else:
+                    ai += probAPlusOne(x)/a0
+                    
+                if (ai + probBPlusOne(x) > target):
+                    print 'adding type B mitochondria to ', x
+                    createCell((x[0], x[1]+1))
+                    population[x][0] -= 1
+                    population[x][1].popleft()
+                else:
+                    ai += probBPlusOne(x)/a0
+                    
+            t += tau
+            advanceAllClocks(tau)
         
     
 # calculate a0
