@@ -26,7 +26,7 @@ def probAPlusOne((numA, numB)):
     
     return transitionProb
     
-def probBPlusOne((numA, numB)_:
+def probBPlusOne((numA, numB)):
     heteroplasmy = float(numA)/(float(numA + numB))
     transitionProb = mitoGenRate * (1 - heteroplasmy) * population[(numA, numB)][0]
     
@@ -37,8 +37,13 @@ def probBPlusOne((numA, numB)_:
 # calculate a0
 def calcA0(population):
     # loop over each element of the population dictionary and sum the total probabilities
-    
-def loop(runTime):
-    for t in range(0, runtime):
+    a0 = 0.0    
+    for x in population.keys():
+        print x #useful to see the workings here
+        a0 += probAPlusOne(x)
+        print a0
+        a0 += probBPlusOne(x)
+        print a0
+    return a0
         
             
