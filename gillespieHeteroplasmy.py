@@ -37,15 +37,25 @@ def getShortestClock(population):
 
 # transition functions
 def probAPlusOne((numA, numB)):
-    heteroplasmy = float(numA)/(float(numA + numB))
-    transitionProb = mitoGenRate * heteroplasmy * population[(numA, numB)][0]    
-    return transitionProb
+    if numA > targetNumA:
+        return 0
+    else:
+        heteroplasmy = float(numA)/(float(numA + numB))
+        transitionProb = mitoGenRate * heteroplasmy * population[(numA, numB)][0]
+        if population[(numA, numB)][0] == 0:
+            transitionProb = 0
+        return transitionProb
     
 def probBPlusOne((numA, numB)):
-    heteroplasmy = float(numA)/(float(numA + numB))
-    transitionProb = mitoGenRate * (1 - heteroplasmy) * population[(numA, numB)][0]   
-    return transitionProb
-    
+    if numA > targetNumA:
+        return 0
+    else:
+        heteroplasmy = float(numA)/(float(numA + numB))
+        transitionProb = mitoGenRate * (1 - heteroplasmy) * population[(numA, numB)][0]
+        if population[(numA, numB)][0] == 0:
+            transitionProb = 0
+        return transitionProb
+        
 def chooseDivision((numA, numB)):
     numALost = np.random.binomial(numA, 0.5)
     numBLost = np.random.binomial(numB, 0.5)    
@@ -76,6 +86,7 @@ def run(runTime):
     while t < runTime:
         a0 = calcA0(population)
         tau = np.random.exponential(float(1/a0))
+        print 'tau ', tau
         
         if tau > getShortestClock(population)[0]:
             # partition cell from shortest clock cell group
@@ -84,14 +95,20 @@ def run(runTime):
             # create new cells with appropriate mito numbers (initialise cell clocks w/some randomness to prevent collision)
             createCell((newA1, newB1))
             createCell((newA2, newB2))
+            print 'time ', t
+            print 'dividing ', (numA, numB)
+            print 'creating ', (newA1, newB1)
+            print 'creating ', (newA2, newB2)
             # delete old cell
             population[(numA, numB)][0] -= 1
             timeAdvance = population[(numA, numB)][1].popleft()
+            if population[(numA, numB)][0] == 0:
+                del population[(numA, numB)]
             # advance time by shortest clock time
             t += timeAdvance
             advanceAllClocks(timeAdvance)
             
-        elif tau <= getShortestClock(population)[0]:
+        elif tau <= getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
             # partition [0, 1) appropriately by a_i
             # draw from [0, 1)
             # do the appropriate action
@@ -99,18 +116,26 @@ def run(runTime):
             ai = 0
             for x in population.keys():
                 if (ai + probAPlusOne(x) > target):
+                    print 'time ', t                    
                     print 'adding type A mitochondria to ', x
                     createCell((x[0]+1, x[1])) # PROBLEM - needs to inherit cycle timer!
                     population[x][0] -= 1
                     population[x][1].popleft()
+                    if population[x][0] == 0:
+                        del population[x]
+                    continue
                 else:
                     ai += probAPlusOne(x)/a0
                     
                 if (ai + probBPlusOne(x) > target):
+                    print 'time ', t
                     print 'adding type B mitochondria to ', x
                     createCell((x[0], x[1]+1))
                     population[x][0] -= 1
                     population[x][1].popleft()
+                    if population[x][0] == 0:
+                        del population[x]
+                    continue
                 else:
                     ai += probBPlusOne(x)/a0
                     
@@ -129,5 +154,9 @@ def calcA0(population):
         returnVar += probBPlusOne(x)
         #print a0
     return returnVar
+    
+def getPop(popDict = population):
+    for x in popDict:
+        print x, popDict[x]
         
             
