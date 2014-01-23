@@ -78,7 +78,18 @@ def advanceAllClocks(tau):
     # steps all clocks in the population clock deques forward by tau
     for key in population.keys():
         for i in range(0, len(population[key][1])):
-            population[key][1][i] -= tau
+            population[key][1][i] = population[key][1][i] - tau
+            
+def sortedInsert(dq, val):
+    # takes a sorted deque and inserts val
+    for i in range(0, len(dq)):
+        if val < dq[i]:
+            dq.rotate(-(i))
+            dq.appendleft(val)
+            dq.rotate(i)
+            break
+    dq.append(val)
+    
     
 # the Gillespie loop:
 def run(runTime):
@@ -118,7 +129,8 @@ def run(runTime):
                 if (ai + probAPlusOne(x) > target):
                     print 'time ', t                    
                     print 'adding type A mitochondria to ', x
-                    createCell((x[0]+1, x[1])) # PROBLEM - needs to inherit cycle timer!
+                    createCell((x[0]+1, x[1])) # PROBLEM - needs to inherit cycle timer! how can we do this? insert into deque
+                    sortedInsert(population[(x[0]+1, x[1])][1], population[x][1]) # transfers cell clock timer            
                     population[x][0] -= 1
                     population[x][1].popleft()
                     if population[x][0] == 0:
@@ -131,6 +143,7 @@ def run(runTime):
                     print 'time ', t
                     print 'adding type B mitochondria to ', x
                     createCell((x[0], x[1]+1))
+                    sortedInsert(population[(x[0], x[1]+1)][1], population[x][1])    
                     population[x][0] -= 1
                     population[x][1].popleft()
                     if population[x][0] == 0:
