@@ -8,18 +8,18 @@ import matplotlib.pyplot as plt
 import collections as coll
 
 # define constants
-mitoGenRate = 1 # needs changing!
+mitoGenRate = 1e-2 # needs changing!
 divisionRate = 1
 targetNumA = 100
-cellCycleTime = 30000
+cellCycleTime = 3000
 
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
 
 # setup initial population
-population[(100,100)] = [1, coll.deque([2500])]
-population[(150,100)] = [1, coll.deque([1000])]
-population[(100,200)] = [1, coll.deque([2000])]
+population[(5,50)] = [1, coll.deque([2500])]
+#population[(150,100)] = [1, coll.deque([1000])]
+#population[(100,200)] = [1, coll.deque([2000])]
 
 # return shortest time to deterministic division event
 def getShortestClock(population):
@@ -38,6 +38,8 @@ def getShortestClock(population):
 # transition functions
 def probAPlusOne((numA, numB)):
     if numA >= targetNumA:
+        return 0        
+    elif numA == 0 and numB == 0: # these cells are 'idle' (biologically shouldn't exist!)
         return 0
     else:
         heteroplasmy = float(numA)/(float(numA + numB))
@@ -49,6 +51,8 @@ def probAPlusOne((numA, numB)):
 def probBPlusOne((numA, numB)):
     if numA >= targetNumA:
         return 0
+    elif numA == 0 and numB == 0:
+        return 0
     else:
         heteroplasmy = float(numA)/(float(numA + numB))
         transitionProb = mitoGenRate * (1 - heteroplasmy) * population[(numA, numB)][0]
@@ -56,13 +60,18 @@ def probBPlusOne((numA, numB)):
             transitionProb = 0
         return transitionProb
         
-def chooseDivision((numA, numB)):
-    numALost = np.random.binomial(numA, 0.5)
-    numBLost = np.random.binomial(numB, 0.5)    
-    if numALost == numA:
-        numALost -= 1
-    if numBLost == numB:
-        numBLost -= 1
+def chooseDivision((numA, numB)):   
+    if numA == 0:
+        numALost = 0
+    else:
+        numALost = np.random.binomial(numA, 0.5)
+    if numB == 0:
+        numBLost = 0
+    else:
+        try:
+            numBLost = np.random.binomial(numB, 0.5)    
+        except ValueError:
+            print (numA, numB)
     return ((numA-numALost, numB-numBLost),(numALost, numBLost))
     
 def createCell((numA, numB)):
@@ -96,13 +105,13 @@ def sortedInsert(dq, val):
 def run(runTime):
     t = 0
     while t < runTime:
-        print 'time: ', t
+        #print 'time: ', t
         a0 = calcA0(population)
         if a0 == 0.0:
             tau = getShortestClock(population)[0]
         else:
             tau = np.random.exponential(float(1/a0))
-        print 'tau: ', tau
+        #print 'tau: ', tau
         
         if tau >= getShortestClock(population)[0]:
             # partition cell from shortest clock cell group
@@ -111,9 +120,9 @@ def run(runTime):
             # create new cells with appropriate mito numbers (initialise cell clocks w/some randomness to prevent collision)
             createCell((newA1, newB1))
             createCell((newA2, newB2))
-            print 'dividing ', (numA, numB)
-            print 'creating ', (newA1, newB1)
-            print 'creating ', (newA2, newB2)
+            #print 'dividing ', (numA, numB)
+            #print 'creating ', (newA1, newB1)
+            #print 'creating ', (newA2, newB2)
             # delete old cell
             population[(numA, numB)][0] -= 1
             timeAdvance = population[(numA, numB)][1].popleft()
@@ -121,7 +130,7 @@ def run(runTime):
                 del population[(numA, numB)]
             # advance time by shortest clock time
             t += timeAdvance
-            print 'time ', t
+            #print 'time ', t
             advanceAllClocks(timeAdvance)
             
         elif tau < getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
@@ -132,7 +141,7 @@ def run(runTime):
             ai = 0
             for x in population.keys():
                 if (ai + probAPlusOne(x) > target):                   
-                    print 'adding type A mitochondria to ', x
+                    #print 'adding type A mitochondria to ', x
                     createCell((x[0]+1, x[1]))
                     population[(x[0]+1, x[1])][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
                     population[x][0] -= 1
@@ -145,7 +154,7 @@ def run(runTime):
                     ai += probAPlusOne(x)/a0
                     
                 if (ai + probBPlusOne(x) > target):
-                    print 'adding type B mitochondria to ', x
+                    #print 'adding type B mitochondria to ', x
                     createCell((x[0], x[1]+1))
                     population[(x[0], x[1]+1)][1].pop() # remove the 'wrong' timer
                     population[x][0] -= 1
@@ -159,7 +168,7 @@ def run(runTime):
                     
             t += tau
             advanceAllClocks(tau)
-            print 'new time: ', t
+            #print 'new time: ', t
         
     
 # calculate a0
