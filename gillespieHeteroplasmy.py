@@ -23,7 +23,7 @@ population[(100,200)] = [1, coll.deque([2000])]
 
 # return shortest time to deterministic division event
 def getShortestClock(population):
-    shortestClock = cellCycleTime # this is the worst it can be    
+    shortestClock = cellCycleTime + 1 # this is the worst it can be    
     for x in population.keys():
         try:        
             if population[x][1][0] < shortestClock:
@@ -72,12 +72,14 @@ def createCell((numA, numB)):
         population[(numA, numB)][1].append(cellCycleTime + np.random.uniform()) # init with some random delta to prevent collisions
     except KeyError:
         population[(numA, numB)] = [1]
-        population[(numA, numB)].append(coll.deque([cellCycleTime + np.random.uniform()]))    
+        population[(numA, numB)].append(coll.deque([cellCycleTime + np.random.uniform()]))
         
 def advanceAllClocks(tau):
-    # steps all clocks in the population clock deques forward by tau
+    # steps all clocks in the population clock deques forward by tau - bugged when advance by float
+    getPop(population)    
     for key in population.keys():
         for i in range(0, len(population[key][1])):
+            #print population[key][1][i]            
             population[key][1][i] = population[key][1][i] - tau
             
 def sortedInsert(dq, val):
@@ -106,7 +108,6 @@ def run(runTime):
             # create new cells with appropriate mito numbers (initialise cell clocks w/some randomness to prevent collision)
             createCell((newA1, newB1))
             createCell((newA2, newB2))
-            print 'time ', t
             print 'dividing ', (numA, numB)
             print 'creating ', (newA1, newB1)
             print 'creating ', (newA2, newB2)
@@ -117,6 +118,7 @@ def run(runTime):
                 del population[(numA, numB)]
             # advance time by shortest clock time
             t += timeAdvance
+            print 'time ', t
             advanceAllClocks(timeAdvance)
             
         elif tau <= getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
@@ -129,13 +131,14 @@ def run(runTime):
                 if (ai + probAPlusOne(x) > target):
                     print 'time ', t                    
                     print 'adding type A mitochondria to ', x
-                    createCell((x[0]+1, x[1])) # PROBLEM - needs to inherit cycle timer! how can we do this? insert into deque
-                    sortedInsert(population[(x[0]+1, x[1])][1], population[x][1]) # transfers cell clock timer            
+                    createCell((x[0]+1, x[1]))
+                    population[(x[0]+1, x[1])][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
                     population[x][0] -= 1
-                    population[x][1].popleft()
+                    timer = population[x][1].popleft()
+                    sortedInsert(population[(x[0]+1, x[1])][1], timer) # transfers cell clock timer            
                     if population[x][0] == 0:
                         del population[x]
-                    continue
+                    break
                 else:
                     ai += probAPlusOne(x)/a0
                     
@@ -143,12 +146,13 @@ def run(runTime):
                     print 'time ', t
                     print 'adding type B mitochondria to ', x
                     createCell((x[0], x[1]+1))
-                    sortedInsert(population[(x[0], x[1]+1)][1], population[x][1])    
+                    population[(x[0], x[1]+1)][1].pop() # remove the 'wrong' timer
                     population[x][0] -= 1
-                    population[x][1].popleft()
+                    timer = population[x][1].popleft()
+                    sortedInsert(population[(x[0], x[1]+1)][1], timer) # transfers cell clock timer
                     if population[x][0] == 0:
                         del population[x]
-                    continue
+                    break
                 else:
                     ai += probBPlusOne(x)/a0
                     
