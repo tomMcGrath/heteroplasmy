@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import collections as coll
 
 # define constants
-mitoGenRate = 1e-3 # needs changing!
+mitoGenRate = 1 # needs changing!
 divisionRate = 1
 targetNumA = 100
-cellCycleTime = 3000
+cellCycleTime = 30000
 
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
@@ -37,7 +37,7 @@ def getShortestClock(population):
 
 # transition functions
 def probAPlusOne((numA, numB)):
-    if numA > targetNumA:
+    if numA >= targetNumA:
         return 0
     else:
         heteroplasmy = float(numA)/(float(numA + numB))
@@ -47,7 +47,7 @@ def probAPlusOne((numA, numB)):
         return transitionProb
     
 def probBPlusOne((numA, numB)):
-    if numA > targetNumA:
+    if numA >= targetNumA:
         return 0
     else:
         heteroplasmy = float(numA)/(float(numA + numB))
@@ -76,7 +76,6 @@ def createCell((numA, numB)):
         
 def advanceAllClocks(tau):
     # steps all clocks in the population clock deques forward by tau - bugged when advance by float
-    getPop(population)    
     for key in population.keys():
         for i in range(0, len(population[key][1])):
             #print population[key][1][i]            
@@ -97,11 +96,15 @@ def sortedInsert(dq, val):
 def run(runTime):
     t = 0
     while t < runTime:
+        print 'time: ', t
         a0 = calcA0(population)
-        tau = np.random.exponential(float(1/a0))
-        print 'tau ', tau
+        if a0 == 0.0:
+            tau = getShortestClock(population)[0]
+        else:
+            tau = np.random.exponential(float(1/a0))
+        print 'tau: ', tau
         
-        if tau > getShortestClock(population)[0]:
+        if tau >= getShortestClock(population)[0]:
             # partition cell from shortest clock cell group
             (numA, numB) = getShortestClock(population)[1]
             ((newA1, newB1), (newA2, newB2)) = chooseDivision((numA, numB))
@@ -121,15 +124,14 @@ def run(runTime):
             print 'time ', t
             advanceAllClocks(timeAdvance)
             
-        elif tau <= getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
+        elif tau < getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
             # partition [0, 1) appropriately by a_i
             # draw from [0, 1)
             # do the appropriate action
             target = np.random.uniform()
             ai = 0
             for x in population.keys():
-                if (ai + probAPlusOne(x) > target):
-                    print 'time ', t                    
+                if (ai + probAPlusOne(x) > target):                   
                     print 'adding type A mitochondria to ', x
                     createCell((x[0]+1, x[1]))
                     population[(x[0]+1, x[1])][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
@@ -143,7 +145,6 @@ def run(runTime):
                     ai += probAPlusOne(x)/a0
                     
                 if (ai + probBPlusOne(x) > target):
-                    print 'time ', t
                     print 'adding type B mitochondria to ', x
                     createCell((x[0], x[1]+1))
                     population[(x[0], x[1]+1)][1].pop() # remove the 'wrong' timer
@@ -158,6 +159,7 @@ def run(runTime):
                     
             t += tau
             advanceAllClocks(tau)
+            print 'new time: ', t
         
     
 # calculate a0
@@ -171,9 +173,11 @@ def calcA0(population):
         returnVar += probBPlusOne(x)
         #print a0
     return returnVar
-    
+
+# debug function    
 def getPop(popDict = population):
     for x in popDict:
         print x, popDict[x]
+        
         
             
