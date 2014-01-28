@@ -8,16 +8,16 @@ import matplotlib.pyplot as plt
 import collections as coll
 
 # define constants
-mitoGenRate = 1 # needs changing!
+mitoGenRate = 3e-4 # needs changing!
 divisionRate = 1
 targetNumA = 100
-cellCycleTime = 3000
+cellCycleTime = 300000
 
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
 
 # setup initial population
-population[(50,5)] = [1, coll.deque([2500])]
+population[(50,1)] = [1, coll.deque([250000])]
 #population[(150,100)] = [1, coll.deque([1000])]
 #population[(100,200)] = [1, coll.deque([2000])]
 
