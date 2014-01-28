@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import collections as coll
 
 # define constants
-mitoGenRate = 1e-2 # needs changing!
+mitoGenRate = 1e-1 # needs changing!
 divisionRate = 1
 targetNumA = 100
 cellCycleTime = 3000
@@ -103,6 +103,9 @@ def sortedInsert(dq, val):
     
 # the Gillespie loop:
 def run(runTime):
+    resultHolder = []
+    timeSeries = []
+    popHolder = []
     t = 0
     while t < runTime:
         #print 'time: ', t
@@ -168,7 +171,11 @@ def run(runTime):
                     
             t += tau
             advanceAllClocks(tau)
-            #print 'new time: ', t
+            print t, calcHeteroplasmy(population)
+            resultHolder.append(calcHeteroplasmy(population)[0])
+            popHolder.append(calcHeteroplasmy(population)[1])
+            timeSeries.append(t)
+    return timeSeries, resultHolder, popHolder
         
     
 # calculate a0
@@ -182,11 +189,20 @@ def calcA0(population):
         returnVar += probBPlusOne(x)
         #print a0
     return returnVar
+    
+def calcHeteroplasmy(population):
+    totalA = 0
+    totalB = 0
+    numCells = 0
+    for x in population.keys():
+        totalA += x[0]*population[x][0]
+        totalB += x[1]*population[x][0]
+        numCells += population[x][0]
+    heteroplasmy = float(totalA)/float(totalA + totalB)
+    return (heteroplasmy, numCells)
+    
 
 # debug function    
 def getPop(popDict = population):
     for x in popDict:
         print x, popDict[x]
-        
-        
-            

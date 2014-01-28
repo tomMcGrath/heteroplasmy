@@ -1,0 +1,188 @@
+% !TEX TS-program = pdflatex
+% !TEX encoding = UTF-8 Unicode
+
+% This is a simple template for a LaTeX document using the "article" class.
+% See "book", "report", "letter" for other types of document.
+
+\documentclass[11pt]{article} % use larger type; default would be 10pt
+
+\usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
+
+%%% Examples of Article customizations
+% These packages are optional, depending whether you want the features they provide.
+% See the LaTeX Companion or other references for full information.
+
+%%% PAGE DIMENSIONS
+\usepackage{geometry} % to change the page dimensions
+\geometry{a4paper} % or letterpaper (US) or a5paper or....
+% \geometry{margin=2in} % for example, change the margins to 2 inches all round
+% \geometry{landscape} % set up the page for landscape
+%   read geometry.pdf for detailed page layout information
+
+\usepackage{graphicx} % support the \includegraphics command and options
+
+% \usepackage[parfill]{parskip} % Activate to begin paragraphs with an empty line rather than an indent
+
+%%% PACKAGES
+\usepackage{booktabs} % for much better looking tables
+\usepackage{array} % for better arrays (eg matrices) in maths
+\usepackage{paralist} % very flexible & customisable lists (eg. enumerate/itemize, etc.)
+\usepackage{verbatim} % adds environment for commenting out blocks of text & for better verbatim
+\usepackage{subfig} % make it possible to include more than one captioned figure/table in a single float
+% These packages are all incorporated in the memoir class to one degree or another...
+\usepackage{mathtools}
+
+%%% HEADERS & FOOTERS
+\usepackage{fancyhdr} % This should be set AFTER setting up the page geometry
+\pagestyle{fancy} % options: empty , plain , fancy
+\renewcommand{\headrulewidth}{0pt} % customise the layout...
+\lhead{}\chead{}\rhead{}
+\lfoot{}\cfoot{\thepage}\rfoot{}
+
+%%% SECTION TITLE APPEARANCE
+\usepackage{sectsty}
+\allsectionsfont{\sffamily\mdseries\upshape} % (See the fntguide.pdf for font help)
+% (This matches ConTeXt defaults)
+
+%%% ToC (table of contents) APPEARANCE
+\usepackage[nottoc,notlof,notlot]{tocbibind} % Put the bibliography in the ToC
+\usepackage[titles,subfigure]{tocloft} % Alter the style of the Table of Contents
+\renewcommand{\cftsecfont}{\rmfamily\mdseries\upshape}
+\renewcommand{\cftsecpagefont}{\rmfamily\mdseries\upshape} % No bold!
+
+%%% END Article customizations
+
+%%% The "real" document content comes below...
+
+\title{Mitochondrial Heteroplasmy \& Random Walks}
+\author{Tom McGrath}
+%\date{} % Activate to display a given date or no date (if empty),
+         % otherwise the current date is printed 
+
+\begin{document}
+\maketitle
+
+\section{A generalised solution to 1D diffusion with absorbing boundaries}
+
+Inside a cell, mitochondria can show genetic variation. Consider the simplest case, with two types, which we refer to as types A \& B, and define heteroplasmy $x(A,B)$;
+
+\begin{equation}
+x(A, B) = \frac{A}{A+B}
+\end{equation}
+
+Heteroplasmy can arise and change due to stochastic events - mitochondrial biogenesis and cell division. The stochasticity of these events is thought to cause a random wak in heteroplasmy space, with some inhomogeneity of the diffusion coefficient because of the behaviour of the system. It's not clear exactly what form this takes, but we hope that we can get away with a one-dimensional system, otherwise analytic results become a lot harder to derive. In the large cell-number limit, we can write the process as a diffusion with density $u(x,t)$ where $x$ is the heteroplasmy of the system and $t$ is time. Suggest the variation of diffusion constant depends only on heteroplasmy (we can deal with time-dependent variation as well, but it just adds complication here):
+
+\begin{equation}
+\frac{\partial u(x,t)}{\partial t} = \frac{\partial}{\partial x}\left(f(x)D\frac{\partial u(x,t)}{\partial x}\right)
+\end{equation}
+
+The state space is the interval $[0,1]$, initial conditions are a delta function $\delta(x-\alpha)$, and we choose Dirichlet boundary conditions as the boundaries are absorbing (so $u(0,t) = u(1,t) = 0$). The basic strategy is to make a change of variables to reduce the problem to a spatially-invariant diffusion over the transformed variable, solve this diffusion problem and then undo the transformation. First separate variables:
+
+\begin{equation}
+u(x,t) = w(t)v(x)
+\end{equation}
+
+We can rearrange this result to get:
+
+\begin{equation}
+\frac{1}{w(t)D}\frac{d}{dt}w(t) = \frac{1}{v(x)}\frac{d}{dx}\left(f(x)\frac{dv(x)}{dx}\right) = -\lambda
+\end{equation}
+
+The $t$ terms can be solved as in the normal diffusion equation so neglect those for now. Making the change of variables:
+
+\begin{equation}
+\xi(x)  =\int^{x}_{0}\frac{1}{\sqrt{f(u)}} du
+\end{equation}
+
+we find:
+
+\begin{equation}
+\frac{d}{dx}\left(f(x)\frac{d}{dx}v(x)\right) = \frac{d}{d\xi}\frac{d\xi}{dx}f(x)\frac{d}{d\xi}\frac{d\xi}{dx}v(x) = -\lambda v(x)
+\end{equation}
+
+Noticing:
+\begin{equation}
+\frac{d\xi}{dx} = \frac{1}{f(x)}
+\end{equation}
+
+we obtain
+
+\begin{equation}
+\frac{d}{d\xi}\frac{f(x)}{f(x)}\frac{d v}{d\xi} = \frac{d^{2} v}{d\xi^{2}} = -\lambda v
+\end{equation}
+
+a spatially-homoegeneous diffusion over the rescaled interval $[\xi(0), \xi(1)]$ - denote this as length $L$. This has eigenvalues:
+
+\begin{equation}
+\lambda_{n} = \frac{n^{2}\pi^{2}}{L^{2}} = \frac{n^{2}\pi^{2}}{\int^{1}_{0}f(u)^{-\frac{1}{2}}du}
+\end{equation}
+
+and eigenvectors:
+
+\begin{equation}
+v_{n}(\xi) = \sin(\frac{n\pi}{L}\xi)
+\end{equation}
+
+To solve the particular problem given by initial conditions $u(x, 0)$ = $\delta(x-\alpha) = \delta(\xi - \alpha L)$ we take the scalar product of the basis set with the initial conditions:
+
+\begin{equation}
+\left<\delta(\xi - \alpha L|\sin\left(\frac{n\pi}{L}\xi\right)\right> = \int^{L}_{0}\delta(\xi - \alpha L)\sin\left(\frac{n\pi}{L}\xi\right) d\xi = \sin(n\pi \alpha)
+\end{equation}
+
+So as a sum of the eigenfunctions we have:
+
+\begin{equation}
+v = \sum^{\infty}_{n=1}\sin(n\pi\alpha)\sin\left(\frac{n\pi}{L}\xi\right) = \sum^{\infty}_{n=1}\sin(n\pi\alpha)\sin\left(\frac{n\pi}{L}\int^{x}_{0}\frac{1}{\sqrt{f(u)}}du\right)
+\end{equation}
+
+The time-dependent component has the standard exponential solution:
+
+\begin{equation}
+w(t) = \exp\left(-\frac{n^2\pi^2}{L^2}Dt\right)
+\end{equation}
+
+We can express this in terms of the Jacobi theta function:
+
+\begin{equation}
+\vartheta_{3}(z, \tau) = 1 + \sum^{\infty}_{n=1}(e^{i\pi\tau})^{n^2}\cos(2\pi n z)
+\end{equation}
+
+by using the identity $2\sin(a)\sin(b) = \cos(a-b) - \cos(a+b)$:
+
+\begin{align}
+u(x,t) &= \sum^{\infty}_{n=1}\sin(n\pi\alpha)\sin\left(\frac{n\pi}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right)e^{-\frac{n^2\pi^{2}}{L}Dt}\\
+&= \frac{1}{2}\sum^{\infty}_{n=1}e^{-\frac{n^2\pi^{2}}{L}Dt}\left[\cos\left(n\pi\alpha - \frac{n\pi}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right) - \cos\left(n\pi\alpha + \frac{n\pi}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right) \right] \\
+&= \frac{1}{2}\sum^{\infty}_{n=1}e^{-\frac{n^2\pi^{2}}{L}Dt}\cos\left(n\pi\alpha - \frac{n\pi}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right) - \frac{1}{2}\sum^{\infty}_{n=1}e^{-\frac{n^2\pi^{2}}{L}Dt}\cos\left(n\pi\alpha - \frac{n\pi}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right) \nonumber \\
+&= \frac{1}{4}\left[\vartheta_{3}\left(\frac{\pi}{2}\left(\alpha - \frac{1}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right), e^{-\frac{\pi^{2}}{L^{2}}Dt}\right) - \vartheta_{3}\left(\frac{\pi}{2}\left(\alpha + \frac{1}{L}\int^{x}_{0}f(u)^{-\frac{1}{2}}du\right), e^{-\frac{\pi^{2}}{L^{2}}Dt}\right) \right]
+\end{align}
+
+This is the general solution for a spatially-inhomogeneous diffusion across the unit interval with two absorbing boundaries. We want to know the rate at which walks end up at each boundary, which we can find by defining the probability current $j(x,t)$:
+
+\begin{equation}
+j(x,t) = -\frac{\partial u(x,t)}{\partial x} + u(x,t)
+\end{equation}
+
+Differentiating the theta function using the definition above \& the chain rule, we find that:
+
+\begin{equation}
+j(x,t) = \frac{\pi}{8L}f(x)^{-\frac{1}{2}}\left[ \vartheta_{3}'\left( r_{-}(x), z(t)\right) + \vartheta_{3}'\left( r_{+}(x), z(t)\right) \right] + u(x,t)
+\end{equation}
+
+where 
+\begin{align}
+r_{\pm} &= \frac{\pi}{2}\left(\alpha \pm \frac{1}{L}\int^{x}_{0} f(u)^{-\frac{1}{2}}du \right) \\
+z(t) &= \exp\left(-\frac{\pi^{2}}{L^{2}}Dt\right)
+\end{align}
+
+At the boundaries $u(1,t) = u(0,t) = 0$ and we can evaluate the probability current using a program like Mathematica or Maple. To obtain the total number that reach each absorbing state, integrate from $t=0$ to $t = \infty$ at the boundaries.
+
+
+
+
+
+
+
+
+
+
+\end{document}
