@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import collections as coll
 
 # define constants
-mitoGenRate = 1e-1 # needs changing!
+mitoGenRate = 1 # needs changing!
 divisionRate = 1
 targetNumA = 100
 cellCycleTime = 3000
@@ -17,7 +17,7 @@ cellCycleTime = 3000
 population = {}
 
 # setup initial population
-population[(5,50)] = [1, coll.deque([2500])]
+population[(50,5)] = [1, coll.deque([2500])]
 #population[(150,100)] = [1, coll.deque([1000])]
 #population[(100,200)] = [1, coll.deque([2000])]
 
@@ -200,7 +200,18 @@ def calcHeteroplasmy(population):
         numCells += population[x][0]
     heteroplasmy = float(totalA)/float(totalA + totalB)
     return (heteroplasmy, numCells)
+
+def graphResults(t, h, p):
+    fig, ax1 = plt.subplots()
+    ax1.plot(t,h)
+    ax1.set_ylim([0,1])
+    ax1.set_xlabel('time')
+    ax1.set_ylabel('heteroplasmy')
     
+    ax2 = ax1.twinx()
+    ax2.plot(t, p, color = 'green')
+    ax2.set_ylabel('population')
+    plt.show()
 
 # debug function    
 def getPop(popDict = population):
