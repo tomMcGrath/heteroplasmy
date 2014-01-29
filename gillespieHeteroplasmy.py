@@ -3,27 +3,30 @@
 # Author: Tom McGrath
 # Date started: 21/01/14
 
+# MAJOR BUG - time goes backwards at cell divisions (probably to do with deque sorting/overfilling)
+# SUGGESTED FIX - remove deque, use list, sort & deduplicate (slower but at least it's correct!)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import collections as coll
 
 # define constants
-mitoGenRate = 3e-4 # needs changing!
+mitoGenRate = 3e-3 # needs changing!
 divisionRate = 1
 targetNumA = 100
-cellCycleTime = 300000
+cellCycleTime = 3000
 
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
 
 # setup initial population
-population[(50,1)] = [1, coll.deque([250000])]
+population[(50,1)] = [1, coll.deque([2500])]
 #population[(150,100)] = [1, coll.deque([1000])]
 #population[(100,200)] = [1, coll.deque([2000])]
 
 # return shortest time to deterministic division event
 def getShortestClock(population):
-    shortestClock = cellCycleTime + 1 # this is the worst it can be    
+    shortestClock = cellCycleTime + 2 # this is the worst it can be    
     for x in population.keys():
         try:        
             if population[x][1][0] < shortestClock:
