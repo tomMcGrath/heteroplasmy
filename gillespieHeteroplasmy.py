@@ -3,26 +3,104 @@
 # Author: Tom McGrath
 # Date started: 21/01/14
 
-# MAJOR BUG - time goes backwards at cell divisions (probably to do with deque sorting/overfilling)
-# SUGGESTED FIX - remove deque, use list, sort & deduplicate (slower but at least it's correct!)
-
 import numpy as np
 import matplotlib.pyplot as plt
-import collections as coll
 
 # define constants
-mitoGenRate = 3e-3 # needs changing!
+mitoGenRate = 0.4 # needs changing!
 divisionRate = 1
 targetNumA = 100
 cellCycleTime = 3000
 
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
-
 # setup initial population
-population[(50,1)] = [1, coll.deque([2500])]
-#population[(150,100)] = [1, coll.deque([1000])]
-#population[(100,200)] = [1, coll.deque([2000])]
+population[(50,1)] = [1, [2500]]
+
+# the Gillespie loop:
+def run(runTime):
+    resultHolder = []
+    timeSeries = []
+    popHolder = []
+    t = 0
+    while t < runTime:
+        getPop()
+        print 'time: ', t
+        a0 = calcA0(population)
+        if a0 == 0.0:
+            tau = getShortestClock(population)[0]
+        else:
+            tau = np.random.exponential(float(1/a0))
+        print 'tau: ', tau
+        
+        if tau >= getShortestClock(population)[0]:
+            # partition cell from shortest clock cell group
+            (numA, numB) = getShortestClock(population)[1]
+            ((newA1, newB1), (newA2, newB2)) = chooseDivision((numA, numB))
+            # create new cells with appropriate mito numbers (initialise cell clocks w/some randomness to prevent collision)
+            createCell((newA1, newB1))
+            createCell((newA2, newB2))
+            #print 'dividing ', (numA, numB)
+            #print 'creating ', (newA1, newB1)
+            #print 'creating ', (newA2, newB2)
+            # delete old cell
+            population[(numA, numB)][0] -= 1
+            population[(numA, numB)][1].reverse()
+            timeAdvance = population[(numA, numB)][1].pop()
+            population[(numA, numB)][1].sort()
+            if population[(numA, numB)][0] == 0:
+                del population[(numA, numB)]
+            # advance time by shortest clock time
+            t += timeAdvance
+            #print 'time ', t
+            advanceAllClocks(timeAdvance)
+            
+        elif tau < getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
+            # partition [0, 1) appropriately by a_i
+            # draw from [0, 1)
+            # do the appropriate action
+            target = np.random.uniform()
+            ai = 0
+            for x in population.keys():
+                if (ai + probAPlusOne(x) > target):                   
+                    #print 'adding type A mitochondria to ', x
+                    createCell((x[0]+1, x[1]))
+                    population[(x[0]+1, x[1])][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
+                    population[x][0] -= 1
+                    population[x][1].reverse()
+                    timer = population[x][1].pop()
+                    population[x][1].sort()
+                    population[(x[0]+1, x[1])][1].append(timer) # transfers cell clock timer            
+                    population[(x[0]+1,x[1])][1].sort()
+                    if population[x][0] == 0:
+                        del population[x]
+                    break
+                else:
+                    ai += probAPlusOne(x)/a0
+                    
+                if (ai + probBPlusOne(x) > target):
+                    #print 'adding type B mitochondria to ', x
+                    createCell((x[0], x[1]+1))
+                    population[(x[0], x[1]+1)][1].pop() # remove the 'wrong' timer
+                    population[x][0] -= 1
+                    population[x][1].reverse()
+                    timer = population[x][1].pop()
+                    population[x][1].sort()
+                    population[(x[0], x[1]+1)][1].append(timer) # transfers cell clock timer            
+                    population[(x[0],x[1]+1)][1].sort()
+                    if population[x][0] == 0:
+                        del population[x]
+                    break
+                else:
+                    ai += probBPlusOne(x)/a0
+                    
+            t += tau
+            advanceAllClocks(tau)
+            print t, calcHeteroplasmy(population)
+            resultHolder.append(calcHeteroplasmy(population)[0])
+            popHolder.append(calcHeteroplasmy(population)[1])
+            timeSeries.append(t)
+    return timeSeries, resultHolder, popHolder
 
 # return shortest time to deterministic division event
 def getShortestClock(population):
@@ -84,7 +162,7 @@ def createCell((numA, numB)):
         population[(numA, numB)][1].append(cellCycleTime + np.random.uniform()) # init with some random delta to prevent collisions
     except KeyError:
         population[(numA, numB)] = [1]
-        population[(numA, numB)].append(coll.deque([cellCycleTime + np.random.uniform()]))
+        population[(numA, numB)].append([cellCycleTime + np.random.uniform()])
         
 def advanceAllClocks(tau):
     # steps all clocks in the population clock deques forward by tau - bugged when advance by float
@@ -102,83 +180,6 @@ def sortedInsert(dq, val):
             dq.rotate(i)
             break
     dq.append(val)
-    
-    
-# the Gillespie loop:
-def run(runTime):
-    resultHolder = []
-    timeSeries = []
-    popHolder = []
-    t = 0
-    while t < runTime:
-        #print 'time: ', t
-        a0 = calcA0(population)
-        if a0 == 0.0:
-            tau = getShortestClock(population)[0]
-        else:
-            tau = np.random.exponential(float(1/a0))
-        #print 'tau: ', tau
-        
-        if tau >= getShortestClock(population)[0]:
-            # partition cell from shortest clock cell group
-            (numA, numB) = getShortestClock(population)[1]
-            ((newA1, newB1), (newA2, newB2)) = chooseDivision((numA, numB))
-            # create new cells with appropriate mito numbers (initialise cell clocks w/some randomness to prevent collision)
-            createCell((newA1, newB1))
-            createCell((newA2, newB2))
-            #print 'dividing ', (numA, numB)
-            #print 'creating ', (newA1, newB1)
-            #print 'creating ', (newA2, newB2)
-            # delete old cell
-            population[(numA, numB)][0] -= 1
-            timeAdvance = population[(numA, numB)][1].popleft()
-            if population[(numA, numB)][0] == 0:
-                del population[(numA, numB)]
-            # advance time by shortest clock time
-            t += timeAdvance
-            #print 'time ', t
-            advanceAllClocks(timeAdvance)
-            
-        elif tau < getShortestClock(population)[0]: # THIS IS THE BIT THAT NEEDS WORK
-            # partition [0, 1) appropriately by a_i
-            # draw from [0, 1)
-            # do the appropriate action
-            target = np.random.uniform()
-            ai = 0
-            for x in population.keys():
-                if (ai + probAPlusOne(x) > target):                   
-                    #print 'adding type A mitochondria to ', x
-                    createCell((x[0]+1, x[1]))
-                    population[(x[0]+1, x[1])][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
-                    population[x][0] -= 1
-                    timer = population[x][1].popleft()
-                    sortedInsert(population[(x[0]+1, x[1])][1], timer) # transfers cell clock timer            
-                    if population[x][0] == 0:
-                        del population[x]
-                    break
-                else:
-                    ai += probAPlusOne(x)/a0
-                    
-                if (ai + probBPlusOne(x) > target):
-                    #print 'adding type B mitochondria to ', x
-                    createCell((x[0], x[1]+1))
-                    population[(x[0], x[1]+1)][1].pop() # remove the 'wrong' timer
-                    population[x][0] -= 1
-                    timer = population[x][1].popleft()
-                    sortedInsert(population[(x[0], x[1]+1)][1], timer) # transfers cell clock timer
-                    if population[x][0] == 0:
-                        del population[x]
-                    break
-                else:
-                    ai += probBPlusOne(x)/a0
-                    
-            t += tau
-            advanceAllClocks(tau)
-            print t, calcHeteroplasmy(population)
-            resultHolder.append(calcHeteroplasmy(population)[0])
-            popHolder.append(calcHeteroplasmy(population)[1])
-            timeSeries.append(t)
-    return timeSeries, resultHolder, popHolder
         
     
 # calculate a0
@@ -215,6 +216,7 @@ def graphResults(t, h, p):
     ax2.plot(t, p, color = 'green')
     ax2.set_ylabel('population')
     plt.show()
+    
 
 # debug function    
 def getPop(popDict = population):
