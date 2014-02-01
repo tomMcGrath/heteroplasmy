@@ -24,14 +24,11 @@ def run(runTime):
     popHolder = []
     t = 0
     while t < runTime:
-        getPop()
-        print 'time: ', t
         a0 = calcA0(population)
         if a0 == 0.0:
             tau = getShortestClock(population)[0]
         else:
             tau = np.random.exponential(float(1/a0))
-        print 'tau: ', tau
         
         if tau >= getShortestClock(population)[0]:
             # partition cell from shortest clock cell group
@@ -59,40 +56,7 @@ def run(runTime):
             # partition [0, 1) appropriately by a_i
             # draw from [0, 1)
             # do the appropriate action
-            target = np.random.uniform()
-            ai = 0
-            for x in population.keys():
-                if (ai + probAPlusOne(x) > target):                   
-                    #print 'adding type A mitochondria to ', x
-                    createCell((x[0]+1, x[1]))
-                    population[(x[0]+1, x[1])][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
-                    population[x][0] -= 1
-                    population[x][1].reverse()
-                    timer = population[x][1].pop()
-                    population[x][1].sort()
-                    population[(x[0]+1, x[1])][1].append(timer) # transfers cell clock timer            
-                    population[(x[0]+1,x[1])][1].sort()
-                    if population[x][0] == 0:
-                        del population[x]
-                    break
-                else:
-                    ai += probAPlusOne(x)/a0
-                    
-                if (ai + probBPlusOne(x) > target):
-                    #print 'adding type B mitochondria to ', x
-                    createCell((x[0], x[1]+1))
-                    population[(x[0], x[1]+1)][1].pop() # remove the 'wrong' timer
-                    population[x][0] -= 1
-                    population[x][1].reverse()
-                    timer = population[x][1].pop()
-                    population[x][1].sort()
-                    population[(x[0], x[1]+1)][1].append(timer) # transfers cell clock timer            
-                    population[(x[0],x[1]+1)][1].sort()
-                    if population[x][0] == 0:
-                        del population[x]
-                    break
-                else:
-                    ai += probBPlusOne(x)/a0
+            addMito(population)
                     
             t += tau
             advanceAllClocks(tau)
@@ -171,18 +135,6 @@ def advanceAllClocks(tau):
             #print population[key][1][i]            
             population[key][1][i] = population[key][1][i] - tau
             
-def sortedInsert(dq, val):
-    # takes a sorted deque and inserts val
-    for i in range(0, len(dq)):
-        if val < dq[i]:
-            dq.rotate(-(i))
-            dq.appendleft(val)
-            dq.rotate(i)
-            break
-    dq.append(val)
-        
-    
-# calculate a0
 def calcA0(population):
     # loop over each element of the population dictionary and sum the total probabilities
     returnVar = 0.0    
@@ -193,6 +145,50 @@ def calcA0(population):
         returnVar += probBPlusOne(x)
         #print a0
     return returnVar
+
+def addMito(population):
+    actionProbs = []
+    actions = []
+    a0 = calcA0(population)
+    for x in population.keys():
+        actions.append(x)
+        actionProbs.append(probAPlusOne(x)/a0)
+        actionProbs.append(probBPlusOne(x)/a0)
+    #print actions, actionProbs
+    choice = np.random.multinomial(1, actionProbs)
+    #print choice
+    for i in range(0, len(choice)):
+        if choice[i] == 1:
+            #print i
+            if i%2 == 0:
+                addTypeA(actions[(i/2)])
+            if i%2 == 1:
+                addTypeB(actions[((i-1)/2)])
+    return actions, actionProbs
+    
+def addTypeA((numA, numB)):
+    createCell((numA + 1, numB))
+    population[(numA + 1, numB)][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
+    population[(numA, numB)][0] -= 1
+    population[(numA, numB)][1].reverse()
+    timer = population[(numA, numB)][1].pop()
+    population[(numA, numB)][1].sort()
+    population[(numA + 1, numB)][1].append(timer) # transfers cell clock timer            
+    population[(numA + 1, numB)][1].sort()
+    if population[(numA, numB)][0] == 0:
+        del population[(numA, numB)]
+        
+def addTypeB((numA, numB)):
+    createCell((numA, numB+1))
+    population[(numA, numB+1)][1].pop() # remove the 'wrong' timer - this is all a bit messy & would be easier without deque
+    population[(numA, numB)][0] -= 1
+    population[(numA, numB)][1].reverse()
+    timer = population[(numA, numB)][1].pop()
+    population[(numA, numB)][1].sort()
+    population[(numA, numB+1)][1].append(timer) # transfers cell clock timer            
+    population[(numA, numB+1)][1].sort()
+    if population[(numA, numB)][0] == 0:
+        del population[(numA, numB)]
     
 def calcHeteroplasmy(population):
     totalA = 0
