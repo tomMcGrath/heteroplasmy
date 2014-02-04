@@ -3,11 +3,13 @@
 # Author: Tom McGrath
 # Date started: 21/01/14
 
+# Next task - code for handling mean & variance on many runs
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 # define constants
-mitoGenRate = 0.4 # needs changing!
+mitoGenRate = 0.3 # needs changing!
 divisionRate = 1
 targetNumA = 100
 cellCycleTime = 3000
@@ -15,7 +17,7 @@ cellCycleTime = 3000
 # initialise population dictionary (typeA, typeB):(number, [cell cycle timers as a deque])
 population = {}
 # setup initial population
-population[(50,1)] = [1, [2500]]
+population[(50,50)] = [1, [2500]]
 
 # the Gillespie loop:
 def run(runTime):
@@ -213,6 +215,29 @@ def graphResults(t, h, p):
     ax2.set_ylabel('population')
     plt.show()
     
+def go():
+    tHolder = []
+    hHolder = []
+    pHolder = []
+    for i in range(0,50): # number of runs
+        for x in population.keys():
+            del population[x]
+        getPop()
+        population[(50,50)] = [1, [2500]]
+        t,h,p = run(20000)
+        tHolder.append(t)
+        hHolder.append(h)
+        pHolder.append(p)
+    fig, ax = plt.subplots(1)
+    #ax2 = ax1.twinx
+    for i in range(0, len(tHolder)):
+        ax.plot(tHolder[i], hHolder[i])
+        #ax2.plot(tHolder[i], pHolder[i], color = 'green')
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Heteroplasmy')
+    #ax2.set_ylabel('Population')
+    plt.show()
+
 
 # debug function    
 def getPop(popDict = population):
